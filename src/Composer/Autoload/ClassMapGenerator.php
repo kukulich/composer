@@ -18,6 +18,7 @@
 
 namespace Composer\Autoload;
 
+use Composer\Cache;
 use Symfony\Component\Finder\Finder;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
@@ -30,6 +31,19 @@ use Composer\Util\Filesystem;
  */
 class ClassMapGenerator
 {
+    /**
+     * @var Cache
+     */
+    private $cache;
+
+    /**
+     * @param Cache $cache
+     */
+    public function setCache(Cache $cache)
+    {
+        $this->cache = $cache;
+    }
+
     /**
      * Generate a class map file
      *
@@ -62,22 +76,42 @@ class ClassMapGenerator
     {
         if (is_string($path)) {
             if (is_file($path)) {
-                $path = array(new \SplFileInfo($path));
+                $files = array(new \SplFileInfo($path));
             } elseif (is_dir($path)) {
-                $path = Finder::create()->files()->followLinks()->name('/\.(php|inc|hh)$/')->in($path);
+                $files = Finder::create()->files()->followLinks()->name('/\.(php|inc|hh)$/')->in($path);
             } else {
                 throw new \RuntimeException(
                     'Could not scan for classes inside "'.$path.
                     '" which does not appear to be a file nor a folder'
                 );
             }
+        } else {
+            $files = $path;
         }
 
         $map = array();
         $filesystem = new Filesystem();
         $cwd = realpath(getcwd());
 
-        foreach ($path as $file) {
+        if (is_string($path)) {
+            if (!$filesystem->isAbsolutePath($path)) {
+                $path = $cwd . '/' . $path;
+            }
+            $cacheFile = $filesystem->normalizePath($path) . '.json';
+        } else {
+            $cacheFile = md5(serialize($path)) . '.json';
+        }
+
+        $cache = [];
+        $cacheChanged = false;
+        if ($this->cache !== null) {
+            $cacheContent = $this->cache->read($cacheFile);
+            if ($cacheContent !== false) {
+                $cache = json_decode($cacheContent, JSON_OBJECT_AS_ARRAY);
+            }
+        }
+
+        foreach ($files as $file) {
             $filePath = $file->getPathname();
             if (!in_array(pathinfo($filePath, PATHINFO_EXTENSION), array('php', 'inc', 'hh'))) {
                 continue;
@@ -99,7 +133,15 @@ class ClassMapGenerator
                 continue;
             }
 
-            $classes = $this->findClasses($filePath);
+            $fileModified = filemtime($filePath);
+
+            if (array_key_exists($filePath, $cache) && $cache[$filePath]['modified'] === $fileModified) {
+                $classes = $cache[$filePath]['classes'];
+            } else {
+                $classes = self::findClasses($filePath);
+                $cache[$filePath] = array('modified' => $fileModified, 'classes' => $classes);
+                $cacheChanged = true;
+            }
 
             foreach ($classes as $class) {
                 // skip classes not within the given namespace prefix
@@ -116,6 +158,10 @@ class ClassMapGenerator
                     );
                 }
             }
+        }
+
+        if ($this->cache !== null && $cacheChanged) {
+            $this->cache->write($cacheFile, json_encode($cache));
         }
 
         return $map;

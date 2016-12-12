@@ -99,7 +99,7 @@ class PluginInstallerTest extends TestCase
         $this->io = $this->getMockBuilder('Composer\IO\IOInterface')->getMock();
 
         $dispatcher = $this->getMockBuilder('Composer\EventDispatcher\EventDispatcher')->disableOriginalConstructor()->getMock();
-        $this->autoloadGenerator = new AutoloadGenerator($dispatcher);
+        $this->autoloadGenerator = new AutoloadGenerator($dispatcher, $this->io);
 
         $this->composer = new Composer();
         $config = new Config();

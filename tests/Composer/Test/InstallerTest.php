@@ -205,7 +205,7 @@ class InstallerTest extends TestCase
 
         $eventDispatcher = $this->getMockBuilder('Composer\EventDispatcher\EventDispatcher')->disableOriginalConstructor()->getMock();
         $autoloadGenerator = $this->getMockBuilder('Composer\Autoload\AutoloadGenerator')
-            ->setConstructorArgs(array($eventDispatcher))
+            ->setConstructorArgs(array($eventDispatcher, $io))
             ->getMock();
         $composer->setAutoloadGenerator($autoloadGenerator);
         $composer->setEventDispatcher($eventDispatcher);

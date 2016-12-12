@@ -12,6 +12,7 @@
 
 namespace Composer\Autoload;
 
+use Composer\Cache;
 use Composer\Config;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\Installer\InstallationManager;
@@ -63,7 +64,7 @@ class AutoloadGenerator
      */
     private $runScripts = false;
 
-    public function __construct(EventDispatcher $eventDispatcher, IOInterface $io = null)
+    public function __construct(EventDispatcher $eventDispatcher, IOInterface $io)
     {
         $this->eventDispatcher = $eventDispatcher;
         $this->io = $io;
@@ -109,6 +110,8 @@ class AutoloadGenerator
 
     public function dump(Config $config, InstalledRepositoryInterface $localRepo, PackageInterface $mainPackage, InstallationManager $installationManager, $targetDir, $scanPsr0Packages = false, $suffix = '')
     {
+        $this->classMapGenerator->setCache(new Cache($this->io, $config->get('cache-dir').'/classes'));
+
         if ($this->classMapAuthoritative) {
             // Force scanPsr0Packages when classmap is authoritative
             $scanPsr0Packages = true;

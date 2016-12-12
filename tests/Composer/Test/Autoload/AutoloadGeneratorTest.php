@@ -134,7 +134,7 @@ class AutoloadGeneratorTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->generator = new AutoloadGenerator($this->eventDispatcher);
+        $this->generator = new AutoloadGenerator($this->eventDispatcher, $this->getMock('Composer\IO\IOInterface'));
     }
 
     protected function tearDown()
