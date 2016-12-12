@@ -39,6 +39,11 @@ class AutoloadGenerator
     private $io;
 
     /**
+     * @var ClassMapGenerator
+     */
+    private $classMapGenerator;
+
+    /**
      * @var bool
      */
     private $devMode = false;
@@ -62,6 +67,8 @@ class AutoloadGenerator
     {
         $this->eventDispatcher = $eventDispatcher;
         $this->io = $io;
+
+        $this->classMapGenerator = new ClassMapGenerator();
     }
 
     public function setDevMode($devMode = true)
@@ -333,7 +340,7 @@ EOF;
 
     private function generateClassMap($dir, $blacklist = null, $namespaceFilter = null, $showAmbiguousWarning = true)
     {
-        return ClassMapGenerator::createMap($dir, $blacklist, $showAmbiguousWarning ? $this->io : null, $namespaceFilter);
+        return $this->classMapGenerator->createMap($dir, $blacklist, $showAmbiguousWarning ? $this->io : null, $namespaceFilter);
     }
 
     public function buildPackageMap(InstallationManager $installationManager, PackageInterface $mainPackage, array $packages)

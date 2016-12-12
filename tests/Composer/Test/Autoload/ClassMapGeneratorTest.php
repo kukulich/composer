@@ -25,12 +25,23 @@ use Composer\Util\Filesystem;
 
 class ClassMapGeneratorTest extends TestCase
 {
+
+    /**
+     * @var ClassMapGenerator
+     */
+    private $classMapGenerator;
+
+    protected function setUp()
+    {
+        $this->classMapGenerator = new ClassMapGenerator();
+    }
+
     /**
      * @dataProvider getTestCreateMapTests
      */
     public function testCreateMap($directory, $expected)
     {
-        $this->assertEqualsNormalized($expected, ClassMapGenerator::createMap($directory));
+        $this->assertEqualsNormalized($expected, $this->classMapGenerator->createMap($directory));
     }
 
     public function getTestCreateMapTests()
@@ -117,7 +128,7 @@ class ClassMapGeneratorTest extends TestCase
         $this->assertEqualsNormalized(array(
             'NamespaceCollision\\A\\B\\Bar' => realpath(__DIR__) . '/Fixtures/beta/NamespaceCollision/A/B/Bar.php',
             'NamespaceCollision\\A\\B\\Foo' => realpath(__DIR__) . '/Fixtures/beta/NamespaceCollision/A/B/Foo.php',
-        ), ClassMapGenerator::createMap($finder));
+        ), $this->classMapGenerator->createMap($finder));
     }
 
     /**
@@ -130,7 +141,7 @@ class ClassMapGeneratorTest extends TestCase
         $find = $r->getMethod('findClasses');
         $find->setAccessible(true);
 
-        $find->invoke(null, __DIR__ . '/no-file');
+        $find->invoke($this->classMapGenerator, __DIR__ . '/no-file');
     }
 
     public function testAmbiguousReference()
@@ -165,7 +176,7 @@ class ClassMapGeneratorTest extends TestCase
             '<warning>Warning: Ambiguous class resolution, "A" was found in both "' . $b . '" and "' . $a . '", the first will be used.</warning>',
         );
 
-        ClassMapGenerator::createMap($finder, null, $io);
+        $this->classMapGenerator->createMap($finder, null, $io);
 
         $this->assertContains($msg, $messages, $msg . ' not found in expected messages (' . var_export($messages, true) . ')');
 
@@ -207,7 +218,7 @@ class ClassMapGeneratorTest extends TestCase
         $io->expects($this->never())
             ->method('write');
 
-        ClassMapGenerator::createMap($tempDir, null, $io);
+        $this->classMapGenerator->createMap($tempDir, null, $io);
 
         $fs = new Filesystem();
         $fs->removeDirectory($tempDir);
@@ -219,7 +230,7 @@ class ClassMapGeneratorTest extends TestCase
      */
     public function testCreateMapThrowsWhenDirectoryDoesNotExist()
     {
-        ClassMapGenerator::createMap(__DIR__ . '/no-file.no-foler');
+        $this->classMapGenerator->createMap(__DIR__ . '/no-file.no-foler');
     }
 
     public function testDump()
@@ -231,7 +242,7 @@ class ClassMapGeneratorTest extends TestCase
 
         file_put_contents($fileInDirectory, "<?php class TestClass {} ?>");
 
-        ClassMapGenerator::dump(array($tempDir), $resultFile);
+        $this->classMapGenerator->dump(array($tempDir), $resultFile);
 
         $fileInDirectory = str_replace('\\', '\\\\', $fileInDirectory);
         $this->assertStringEqualsFile($resultFile, "<?php return array (\n  'TestClass' => '$fileInDirectory',\n);");

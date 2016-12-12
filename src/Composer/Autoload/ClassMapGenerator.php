@@ -36,12 +36,12 @@ class ClassMapGenerator
      * @param \Traversable $dirs Directories or a single path to search in
      * @param string       $file The name of the class map file
      */
-    public static function dump($dirs, $file)
+    public function dump($dirs, $file)
     {
         $maps = array();
 
         foreach ($dirs as $dir) {
-            $maps = array_merge($maps, static::createMap($dir));
+            $maps = array_merge($maps, $this->createMap($dir));
         }
 
         file_put_contents($file, sprintf('<?php return %s;', var_export($maps, true)));
@@ -58,7 +58,7 @@ class ClassMapGenerator
      * @throws \RuntimeException When the path is neither an existing file nor directory
      * @return array             A class map array
      */
-    public static function createMap($path, $blacklist = null, IOInterface $io = null, $namespace = null)
+    public function createMap($path, $blacklist = null, IOInterface $io = null, $namespace = null)
     {
         if (is_string($path)) {
             if (is_file($path)) {
@@ -99,7 +99,7 @@ class ClassMapGenerator
                 continue;
             }
 
-            $classes = self::findClasses($filePath);
+            $classes = $this->findClasses($filePath);
 
             foreach ($classes as $class) {
                 // skip classes not within the given namespace prefix
@@ -128,7 +128,7 @@ class ClassMapGenerator
      * @throws \RuntimeException
      * @return array             The found classes
      */
-    private static function findClasses($path)
+    private function findClasses($path)
     {
         $extraTypes = PHP_VERSION_ID < 50400 ? '' : '|trait';
         if (defined('HHVM_VERSION') && version_compare(HHVM_VERSION, '3.3', '>=')) {
